@@ -1,0 +1,35 @@
+#!/bin/rc
+# SPDX-License-Identifier: MIT
+# Enable a VERIFIED kernel for local PC64 boots. Explicit invocation only.
+# Requires mounted /n/9fat and one NEW backup directory argument, project cwd.
+# Never overwrite/remove stock 9pc64 or an existing alternate image/backup.
+rfork e
+if(! ~ $#* 1 || ! ~ $cputype amd64){
+	echo 'usage: rc kernel/enable-pc64.rc NEW-BACKUP-DIRECTORY (amd64 only)' >[1=2]
+	exit usage
+}
+qga_boot_backup=$1
+qga_boot_fat=/n/9fat
+qga_boot_image=/amd64/9pc64qga
+if(test -e $qga_boot_backup || test -e $qga_boot_fat/9pc64qga){
+	echo 'backup directory or alternate boot image already exists; inspect first' >[1=2]
+	exit exists
+}
+if(! test -r kernel/boot-config.awk || ! test -x $qga_boot_image ||
+   ! test -r $qga_boot_fat/9pc64 || ! test -r $qga_boot_fat/plan9.ini){
+	echo 'missing verified kernel, mounted stock boot files, or project source' >[1=2]
+	exit missing
+}
+mkdir $qga_boot_backup || exit backup
+cp $qga_boot_fat/9pc64 $qga_boot_backup/9pc64.stock || exit backup
+cp $qga_boot_fat/plan9.ini $qga_boot_backup/plan9.ini.stock || exit backup
+cmp $qga_boot_fat/9pc64 $qga_boot_backup/9pc64.stock || exit backup.verify
+cmp $qga_boot_fat/plan9.ini $qga_boot_backup/plan9.ini.stock || exit backup.verify
+awk -f kernel/boot-config.awk $qga_boot_backup/plan9.ini.stock >$qga_boot_backup/plan9.virtio.ini || exit unsupported.config
+cp $qga_boot_image $qga_boot_fat/9pc64qga || exit kernel.copy
+cmp $qga_boot_image $qga_boot_fat/9pc64qga || exit kernel.verify
+# FAT config replacement is not atomic. Verified backup + untouched stock image
+# are the recovery path; keep PVE console access while testing the next boot.
+cp $qga_boot_backup/plan9.virtio.ini $qga_boot_fat/plan9.ini || exit config.copy
+cmp $qga_boot_backup/plan9.virtio.ini $qga_boot_fat/plan9.ini || exit config.verify
+echo 'virtio kernel enabled; stock image untouched; verified backups in' $qga_boot_backup

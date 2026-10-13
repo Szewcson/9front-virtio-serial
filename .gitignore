@@ -1,0 +1,9 @@
+/build/
+/qga9-vconsole-*
+/qga9-native-vconsole-access
+/*.6
+/*.8
+/*.5
+/*.7
+__pycache__/
+*.pyc
