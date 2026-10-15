@@ -1,8 +1,9 @@
 # Experimental checked INTx
 
-The default build keeps INTx masked and polls. This document describes prepared
-code and future validation, not passing native/hardware results. The last
-verified Proxmox guest still used the polling driver.
+The default build keeps INTx masked and polls. The checked path passed native
+builds and specific real QEMU IRQ/reset/port-removal tests in a separate local
+guest; see [STATUS](STATUS.md). The last verified Proxmox guest still used the
+polling driver. Broader live fault/platform validation remains incomplete.
 
 ## Build and activation
 
@@ -16,7 +17,7 @@ The patch touches native `sys/src/9/pc/irq.c` and `sys/src/9/pc64/fns.h`.
 It is not applied automatically or included by merely exporting this driver.
 Review it against a separate native source checkout; where ordinary Git is
 available, run `git apply --check` before applying it. Its context was checked
-against inspected upstream source, not compiled into a tested native kernel.
+against inspected upstream and release-11952 source, and compiled/booted locally.
 Do not apply it blindly to another 9front revision.
 
 With that patch already present in the native source tree, run from this repo:
@@ -34,6 +35,12 @@ Explicitly installing/booting that test kernel needs the backup and console
 recovery procedure in [INSTALL](INSTALL.md). Set both trusted boot options
 `qgavirtio=1` and `qgavirtioirq=1`. The latter is not added by the default boot
 converter. An ordinary build refuses the checked opt-in instead of unmasking.
+
+BIOS `9bootfat` supports short 8+3 filenames only. Keep the descriptive build
+output name, but copy it to a separate unused short FAT name such as `9qgairq`
+and select that short name in plan9.ini. Preserve the stock image/config and
+verify the copied bytes. Native filesystem executable names are not subject to
+this FAT-loader restriction; see native `9boot(8)`.
 
 Successful checked registration binds a vector under the IRQ mailbox lock.
 Startup enables BME while masked, establishes DRIVER_OK, then performs a checked
@@ -71,6 +78,8 @@ Keep a console and host Stop/Start recovery path.
    cover failure branches but do not satisfy live validation. Retaining a
    failed claim until reboot is not successful hotplug recovery.
 
-No steps above have completed on the revised checked-IRQ kernel. The local
-QEMU environment began serial boot only; no native test result is claimed.
+The local guest passed native builds/link, actual checked IRQ delivery,
+reconnect/file/exec smoke tests, forced status-zero reset, an invalid used ID and
+exact named-port removal/re-add with fresh-context recovery. These are subsets
+of the matrix, not all failure branches, PCI-controller unplug or physical hardware proof.
 See [STATUS](STATUS.md) and [SECURITY](SECURITY.md) for the remaining gates.

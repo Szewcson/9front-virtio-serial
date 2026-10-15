@@ -15,8 +15,11 @@ Real modern-capability PCI transport, automatic cold boot and operator-supplied
 PVE binary file/exec smoke tests passed on the authorized VM. INTx remains masked
 and a bounded worker polls at 100 ms deadlines in the default build. An optional
 checked-IRQ kernel patch, opt-in activation and vector-filtered delivery counters
-are prepared, but have not passed native or live IRQ validation.
-Live fault/reset/unplug testing and full kernel safety validation remain pending.
+passed native builds and actual emulated IRQ delivery in a separate local
+QEMU guest. Forced device-status reset and exact named-port removal/re-add
+recovered into fresh contexts, followed by passing binary file/exec smoke tests.
+PCI-controller unplug, broader fault injection and full kernel safety validation
+remain pending.
 Not a verified production release; see [STATUS](docs/STATUS.md).
 
 ## Linux development tests
@@ -27,7 +30,7 @@ make -C tests sanitize
 make -C tests analyze
 ```
 
-The independent suite has 15 C suites and 21 boot/config/integration Python
+The independent suite has 15 C suites and 22 boot/config/integration Python
 methods. These are host fixtures, not a native kernel build. No QGA checkout
 or libresolv needed.
 Post-split ASan/UBSan/leak checks and GCC analyzer passed. Current TSan attempts
@@ -47,7 +50,8 @@ The first command runs 9 native-compatible C suites; the second compiles native
 kernel-header checks. The last builds a separate
 `/sys/src/9/pc64/9pc64qga`, refusing existing configuration/output names, without
 installing or rebooting. Supply a new config name if the default already exists.
-Native post-split build/VM checks have not been rerun.
+The nine native suites, all 17 kernel-header checks and a complete checked-IRQ
+kernel link passed locally. See STATUS for exact evidence and remaining gates.
 Legacy `QGA_*` macros, test names, `9pc64qga` and `qgavirtio=1`
 are retained for compatibility with the deployed image/configuration.
 Neither default target writes boot files or enables hardware.

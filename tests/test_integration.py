@@ -85,6 +85,11 @@ class IntegrationTests(unittest.TestCase):
         for variable in ["CONF", "VCSOURCE", "VCPORT", "VCPC"]:
             self.assertIn("'" + variable + "='^", helper)
 
+    def test_native_preprocessor_uses_supported_conditionals(self):
+        # Native 6c supports ifdef/ifndef, not ANSI #if/#elif expressions.
+        for path in (ROOT / "kernel").glob("*.[ch]"):
+            self.assertIsNone(re.search(r"^\s*#\s*(?:if|elif)\b", path.read_text(), re.M), str(path))
+
     def test_export_preserves_production_sources_and_manual(self):
         script = (ROOT / "scripts/export-upstream.rc").read_text()
         for name in ["port.modules", "pc.modules", "port.headers"]:

@@ -1,12 +1,16 @@
 /* SPDX-License-Identifier: MIT */
 /* Worker-owned checked PCI/ring/control snapshots for virtio-serial. */
-#if !defined(QGA_HOST_TEST) && !defined(VCONSOLE_USER_TEST) && !defined(QGA_VCONSOLE_KERNEL)
+#ifndef QGA_HOST_TEST
+#ifndef VCONSOLE_USER_TEST
+#ifndef QGA_VCONSOLE_KERNEL
 #include "u.h"
 #include "../port/lib.h"
 #include "mem.h"
 #include "dat.h"
 #include "fns.h"
 #define QGA_VCONSOLE_KERNEL
+#endif
+#endif
 #endif
 #include "vconsole.h"
 

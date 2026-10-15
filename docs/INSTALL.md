@@ -3,8 +3,8 @@
 These are instructions, not default build actions. Keep a VM console, verified
 stock kernel/configuration and host access for recovery. The existing test VM
 already has virtio enabled; the repository split does not require reinstalling.
-Native build/VM checks have not been rerun after the split; the commands below
-are procedures, not new test results.
+Independent native builds and specific local QEMU tests passed; see STATUS.
+The commands below remain deployment procedures, not proof of a new Proxmox run.
 
 ## Build and inspect
 
@@ -78,7 +78,8 @@ clean native service namespace. No desktop filesystem export or SSH keys are
 needed. Fixed driver data/status permissions are eve-only; do not chmod #Y.
 Endpoint publication is asynchronous. The revised QGA helper has a stat-only
 readiness wait (up to 30 one-second attempts), followed by one launch or timeout.
-Its native validation/deployment is pending; earlier installed helpers may still
+Its native ready/delayed/absent fixtures passed; Proxmox deployment is pending
+and earlier installed helpers may still
 have the one-shot race. Verify agent presence after the endpoint becomes ready.
 
 ## Host smoke tests
@@ -108,5 +109,6 @@ do not attempt an unverified in-guest write. Keep alternate images and backups
 until rollback is verified. Do not blindly overwrite a running executable.
 
 The stock `can't find bus type 12, number 0` warning is PCI interrupt routing;
-it is not by itself a boot failure. The tested driver intentionally leaves
-INTx masked. Do not disable global ACPI/APIC/MP merely to hide the warning.
+it is not by itself a boot failure. Default builds intentionally leave INTx
+masked; the optional checked path was tested separately in local QEMU without
+disabling global ACPI/APIC/MP. Do not disable those systems to hide the warning.

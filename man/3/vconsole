@@ -54,8 +54,9 @@ guarantees.
 INTx is deliberately masked by default. The worker polls at 100 millisecond
 deadlines. An experimental checked-API kernel build may opt in using
 .BR qgavirtioirq=1 ;
-it unmasks only after checked registration and DRIVER_OK. This path is not
-native-tested; registration and polling do not establish interrupt delivery.
+it unmasks only after checked registration and DRIVER_OK. Registration and
+polling do not establish interrupt delivery; require matching-vector ISR
+activity and separate fault/reset validation on the target platform.
 Four fresh contexts are boot-pinned and never recycled. Exhaustion or failed
 drainage can require reboot. Retry counts are not hard scheduling deadlines.
 .SH FILES
@@ -80,7 +81,8 @@ The standalone repository exports this layout; installation is explicit.
 .IR intro (3),
 .IR qga9 (8)
 .SH BUGS
-Experimental, modern PCI/PC64 only. Native checked interrupt validation, live
-reset/fault/unplug tests and complete kernel DMA/cache/lifetime validation
-remain pending. Filesystem permissions do not isolate eve from eve.
+Experimental, modern PCI/PC64 only. Basic local QEMU IRQ, forced reset and
+named-port recovery tests do not establish failed-reset behavior, PCI-controller
+hot-unplug or complete kernel DMA/cache/lifetime safety.
+Filesystem permissions do not isolate eve from eve.
 The stream neither authenticates QGA nor establishes host isolation.

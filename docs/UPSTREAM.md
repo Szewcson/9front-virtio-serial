@@ -69,7 +69,9 @@ requires explicit `qgavirtioirq=1`. See [IRQ](IRQ.md) for review, build and
 validation requirements. Default builds retain masked INTx and polling.
 
 The manifests, configuration converter and build dependencies have host
-regressions; actual native export/build/link still needs a fresh guest run.
+regressions, and actual native export/build/link passed in the isolated local
+QEMU guest. Production C uses native-supported conditional preprocessing;
+ANSI `#if` expressions are rejected by a structural regression.
 Before submission, resolve the hardware gates in [STATUS](STATUS.md), decide
 with upstream whether the QGA-specific `#Y` API/names are appropriate, and
 review whether this decomposition should be combined further. This package

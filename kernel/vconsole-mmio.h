@@ -3,14 +3,17 @@
 #define QGA9_VCONSOLE_MMIO_H
 #include "vconsole.h"
 
-#if defined(QGA_VCONSOLE_KERNEL) && !defined(QGA_HOST_TEST)
+#ifndef QGA_HOST_TEST
+#ifdef QGA_VCONSOLE_KERNEL
 #include "../port/virtio10.h"
 /* Reuse native definitions only while they match this checked wire ABI. */
 typedef char VcNativeCommonSize[(Vconf_sz == 56) ? 1 : -1];
 typedef char VcNativeDescriptorSize[(sizeof(Vdesc) == 16) ? 1 : -1];
 typedef char VcNativeUsedSize[(sizeof(Vused) == 8) ? 1 : -1];
 #define VCREG(native, test) native
-#else
+#endif
+#endif
+#ifndef VCREG
 /* Native-compatible user/host fixtures have no kernel Pcidev/Vio ABI. */
 #define VCREG(native, test) test
 #endif

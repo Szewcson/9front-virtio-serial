@@ -44,7 +44,7 @@ make -C tests sanitize
 make -C tests analyze
 ```
 
-Linux runs 15 C suites and 21 boot/config/integration Python methods. It requires
+Linux runs 15 C suites and 22 boot/config/integration Python methods. It requires
 C99, pthreads, make, awk, git (patch fixtures) and Python, not libresolv or QGA.
 These are simulated hardware/kernel-primitive tests, not a native kernel build.
 Sanitizer targets use separate output and ASan/UBSan/leak checks.
@@ -76,7 +76,8 @@ rc kernel/build-pc64.rc
 
 Native tests run 9 portable C suites. `kernel-check` compiles 17 objects
 against actual PC64 headers; the full build additionally validates kernel link.
-Native post-split checks have not been rerun.
+These independent native checks and a complete checked-IRQ kernel link passed
+in the local release-11952 QEMU guest; see STATUS for exact scope.
 The optional `mk qga9-native-vconsole-access` binary requires a live #Y0
 endpoint and explicitly tests denial to a private child changed to none; it is
 not run automatically. No default target installs, enables or reboots.
@@ -95,11 +96,13 @@ exact named port, exclusive owner, binary I/O and repeated host reconnect.
 Run the separate QGA host scripts via PVE's synchronized client; do not race a
 second socket reader. Check cold startup and real reset/error/hot-unplug behavior.
 The revised QGA helper has a bounded readiness wait for asynchronous #Y
-publication; its native execution/deployment is still pending.
+publication; native ready/delayed/absent fixtures passed, while Proxmox deployment
+is still pending.
 Masked INTx with polling is not IRQ evidence. The optional checked-API patch and
-activation path are locally tested with mocked native primitives, not native
-hardware. See [IRQ](IRQ.md) for the required distinction and live checks.
+activation path passed native builds and actual emulated IRQ, forced reset,
+malformed-completion and named-port recovery tests, not full platform validation.
+See [IRQ](IRQ.md) for the required distinction and remaining live checks.
 See [STATUS](STATUS.md) for executed evidence versus missing gates.
 The native manual and upstream-layout package are prepared; see
-[UPSTREAM](UPSTREAM.md). Native export/build/link is pending while the VM is
-offline. Driver-neutral compatibility names remain a future migration decision.
+[UPSTREAM](UPSTREAM.md). Native export/build/link passed locally. The Proxmox
+guest was not changed. Driver-neutral names remain a future migration decision.

@@ -66,7 +66,7 @@ withdraws the namespace before reset/free. Ambiguous PCI/reset or drain failure
 retains claims and objects.
 
 The revised userspace helper waits for asynchronous publication with a stat-only
-bounded retry loop before one launch. Native validation/deployment is pending;
+bounded retry loop before one launch. Native rc fixtures passed; Proxmox deployment is pending;
 the earlier installed helper may still have the one-shot readiness race.
 The driver also does not restart an agent after actual owner retirement.
 
@@ -108,7 +108,7 @@ The source/fixture review covers memory safety, thread ownership, races,
 parser/lifetime/overflow patterns and insecure access paths. It establishes
 contracts and identified gaps; it is not independent security certification.
 
-Independent Linux checks passed 15 C suites and 21 Python methods, post-split
+Independent Linux checks passed 15 C suites and 22 Python methods, post-split
 ASan/UBSan/leak checks and GCC analyzer. Fixtures cover actual Dev/blocking source
 with simulated Chan/note/copy/sleep primitives, concurrent brokers/workers,
 malformed PCI/rings, backpressure, wraparound, stale references and failure paths.
@@ -116,8 +116,8 @@ malformed PCI/rings, backpressure, wraparound, stale references and failure path
 Current ThreadSanitizer attempts on three concurrency fixtures failed runtime
 initialization with `unexpected memory mapping`. No detected code race and no
 current TSan pass follows. Earlier combined-tree TSan passes are prior evidence.
-Native post-split checks remain unrerun; prior combined native suites and complete
-kernel linking passed.
+Independent native suites, all 17 kernel-header objects and a full checked-IRQ
+kernel link passed in the separate local QEMU guest.
 
 The new integration uses ordinary native include/build rules and reuses native
 VirtIO register/status enums with wire-ABI size checks. Separately, the optional
@@ -127,11 +127,12 @@ unmasking requires both the native API patch and trusted boot configuration.
 The saturating delivery counter is metadata, not a reset/lifetime token.
 Checked mapping and DMA
 lifetime logic remain local; replacing them with unchecked native helpers would
-weaken these contracts. Actual native compilation remains a release gate.
+weaken these contracts. Actual native compilation passed; full platform safety
+remains a release gate.
 
 Real native normal binary I/O, private-child `none` data/status denial,
 operator PVE file/exec results and automatic cold startup passed.
-The last verified guest keeps INTx masked; 100 ms worker polling does not prove
+The last verified Proxmox guest keeps INTx masked; 100 ms worker polling does not prove
 interrupt routing. Legacy native `intrenable` lacks success reporting and may
 panic on allocation failure. The optional checked patch reports registration
 failure, not hardware delivery or platform fault safety. An ambiguous unmask
@@ -139,7 +140,11 @@ failure may also defeat best-effort re-masking; resources remain retained and
 recovery may require reboot. The path must not be treated as production-verified.
 Native kproc resource waits are not bounded by supervisor retry counts.
 
-Live reset/fault/unplug, native note/copy/allocator failure, competing-driver
+Local actual IRQ delivery, forced status-zero reset, one invalid used-ID fault
+and exact named-port unplug/re-add recovered into fresh contexts; binary
+file/exec tests passed after each. These specific emulated tests do not prove
+all malformed DMA/reset failure paths or physical hardware safety.
+PCI-controller unplug, native note/copy/allocator failure, competing-driver
 injection, hardware recovery, daemon restart and full cache-ordering/callback
 lifetime checks remain incomplete. Pool exhaustion/drain failures require
 recovery or reboot; no unsafe reclamation is supplied.

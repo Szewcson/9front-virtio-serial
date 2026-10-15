@@ -6,8 +6,10 @@ capabilities on virtio console IDs `0x1043` and `0x1003`.
 It is QGA-port-specific, not a general arbitrary-port API.
 
 Real PCI I/O, automatic cold boot and operator PVE file/exec smoke tests passed.
-INTx remains masked; the worker polls at 100 ms deadlines. Checked interrupt
-activation and live reset/fault/unplug validation remain open.
+Default INTx remains masked and the worker polls at 100 ms deadlines. An opt-in
+checked-IRQ kernel passed native builds and local actual IRQ, forced reset,
+invalid used-ID and named-port recovery tests. Broader platform/fault validation
+remains open.
 See [STATUS](STATUS.md), [INSTALL](INSTALL.md) and [SECURITY](SECURITY.md).
 
 ## Native interface
@@ -147,7 +149,8 @@ stays masked. The optional checked-API build with `qgavirtioirq=1` requires an
 installed vector, binds it under the mailbox lock and unmasks only after
 DRIVER_OK. Callback dispatch checks the actual Ureg vector before reading the
 read-clear ISR; spurious unrelated dispatch is not delivery evidence. See
-[IRQ](IRQ.md). No actual IRQ/unmask/reset/unplug validation is claimed.
+[IRQ](IRQ.md). Specific local emulated IRQ/reset/port tests passed; this is not
+full hardware/fault/lifetime validation.
 
 `qgavirtio=1` enables `vconsole-boot-pc.c`. It requires exactly one supported
 console controller and scans at most 64 matching vendor candidates.
@@ -158,7 +161,7 @@ reboot. Startup failures do not silently respawn.
 Startup/drain allow 100 supervisor polls at 100 ms. These are retry bounds,
 not wall-clock guarantees: native kproc resource waits may be indefinite.
 Endpoint publication is asynchronous. The revised QGA helper waits with stat-only
-probes before one launch; native validation/deployment is pending. Earlier
+probes before one launch; native fixtures passed, Proxmox deployment is pending. Earlier
 installed helpers may still have the one-shot startup race.
 
 Stop closes admission/IRQ, masks INTx and clears BME, then waits for actual
@@ -180,8 +183,9 @@ These run 9 native-compatible suites, compile 17 kernel-header objects and build
 a separate `9pc64qga` (or an explicitly chosen unused configuration name).
 Sources build directly using native port/pc rules; register/status enums come
 from `virtio10.h` with ABI checks. See [UPSTREAM](UPSTREAM.md).
-Linux independently runs 15 C suites and 21 Python methods;
-see [DEVELOPMENT](DEVELOPMENT.md). Native post-split checks have not been rerun.
+Linux independently runs 15 C suites and 22 Python methods;
+see [DEVELOPMENT](DEVELOPMENT.md). Native post-split checks and checked-IRQ
+kernel linking passed locally; full target-platform validation is still open.
 Use [INSTALL](INSTALL.md) for explicit boot/config changes and rollback.
 
 References: [VIRTIO 1.3 console §5.3](https://docs.oasis-open.org/virtio/virtio/v1.3/virtio-v1.3.html),
