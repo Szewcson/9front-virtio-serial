@@ -19,7 +19,8 @@ struct VcIrq {
 	VcIrqOps ops; /* immutable after fresh init */
 	void *aux;   /* immutable; outlives callbacks AND late IRQ dispatch */
 	Vcu64 epoch; /* immutable controller generation, never changed/rearmed */
-	int pending, closed, failed, wakers; /* ALL access under ops.lock */
+	Vcu64 deliveries; /* accepted nonzero hardware ISR reads; ops.lock protects */
+	int pending, closed, failed, wakers, vector; /* ALL access under ops.lock */
 };
 /* Fresh/unpublished init only. Callbacks return normally, no longjmp/error.
  * lock is an IRQ-safe synchronization primitive, not a process-only mutex.
@@ -36,6 +37,10 @@ int vcirqready(VcIrq*); /* predicate only; does not consume pending bits */
 int vcirqtake(VcIrq*, int*); /* serialized worker consumes coalesced event bits */
 int vcirqclose(VcIrq*); /* irrevocable gate: no later ISR mapping reads */
 int vcirqdrained(VcIrq*); /* closed and no outstanding wake callbacks */
+int vcirqdeliveries(VcIrq*, Vcu64*); /* CPU snapshot, no ISR read */
+int vcirqroute(VcIrq*, int); /* set once with checked native vector, before unmask */
+int vcirqvector(VcIrq*); /* locked snapshot; -1 for legacy/unassigned */
+int vcirqdispatch(VcIrq*, int); /* unrelated/spurious vectors never read ISR */
 /* Closed/drained permits ISR mapping release AFTER hardware reset and worker
  * join, not freeing the mailbox itself. A pre-dispatched IRQ can still call it.
  * Retain mailbox/locks/aux for boot lifetime unless the platform separately

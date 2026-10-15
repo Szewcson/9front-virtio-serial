@@ -13,8 +13,10 @@ a QGA-focused driver, not a general arbitrary-port userspace API.
 
 Real modern-capability PCI transport, automatic cold boot and operator-supplied
 PVE binary file/exec smoke tests passed on the authorized VM. INTx remains masked
-and a bounded worker polls at 100 ms deadlines. Checked interrupt activation,
-live fault/reset/unplug testing and full kernel safety validation remain pending.
+and a bounded worker polls at 100 ms deadlines in the default build. An optional
+checked-IRQ kernel patch, opt-in activation and vector-filtered delivery counters
+are prepared, but have not passed native or live IRQ validation.
+Live fault/reset/unplug testing and full kernel safety validation remain pending.
 Not a verified production release; see [STATUS](docs/STATUS.md).
 
 ## Linux development tests
@@ -25,8 +27,11 @@ make -C tests sanitize
 make -C tests analyze
 ```
 
-The independent suite has 14 C suites and 13 boot-config Python methods. These
-are host fixtures, not a native kernel build. No QGA checkout or libresolv needed.
+The independent suite has 15 C suites and 21 boot/config/integration Python
+methods. These are host fixtures, not a native kernel build. No QGA checkout
+or libresolv needed.
+Post-split ASan/UBSan/leak checks and GCC analyzer passed. Current TSan attempts
+failed runtime initialization; see [STATUS](docs/STATUS.md) for the distinction.
 
 ## Native 9front build
 
@@ -40,15 +45,23 @@ rc kernel/build-pc64.rc
 
 The first command runs 9 native-compatible C suites; the second compiles native
 kernel-header checks. The last builds a separate
-`/sys/src/9/pc64/9pc64qga`, without installing or rebooting.
-Legacy `QGA_*` macros, test names, `qga9kern`, `9pc64qga` and `qgavirtio=1`
+`/sys/src/9/pc64/9pc64qga`, refusing existing configuration/output names, without
+installing or rebooting. Supply a new config name if the default already exists.
+Native post-split build/VM checks have not been rerun.
+Legacy `QGA_*` macros, test names, `9pc64qga` and `qgavirtio=1`
 are retained for compatibility with the deployed image/configuration.
 Neither default target writes boot files or enables hardware.
+The build now uses ordinary sources, not generated C wrappers.
+Explicit `mk install-man` installs [vconsole(3)](man/3/vconsole), refusing an
+existing manual. [UPSTREAM](docs/UPSTREAM.md) describes the native source overlay,
+configuration/mkfile patch and checked native-constant reuse.
 See [installation and rollback](docs/INSTALL.md) before explicit enablement.
 
 ## Documentation
 
 - [VIRTIO](docs/VIRTIO.md): driver contracts, limits and implementation layers.
+- [UPSTREAM](docs/UPSTREAM.md): prepared native port/pc layout and build integration.
+- [IRQ](docs/IRQ.md): experimental checked routing and live-validation gates.
 - [INSTALL](docs/INSTALL.md): explicit guest/Proxmox deployment and rollback.
 - [DEVELOPMENT](docs/DEVELOPMENT.md): independent host/native checks and gates.
 - [SECURITY](docs/SECURITY.md): memory, concurrency, DMA and access review.

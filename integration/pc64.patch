@@ -1,0 +1,43 @@
+diff --git a/sys/src/9/pc64/pc64 b/sys/src/9/pc64/pc64
+--- a/sys/src/9/pc64/pc64
++++ b/sys/src/9/pc64/pc64
+@@ -1,5 +1,6 @@
+ # pc64 - amd64 pc terminal with local disk
+ dev
++	vconsole
+ 	root
+ 	cons
+ 	swap
+@@ -96,4 +97,20 @@
+ misc
++	vconsole
++	vconsole-mmio
++	vconsole-dma
++	vconsole-irq
++	vconsole-pump
++	vconsole-stream
++	vconsole-controller
++	vconsole-worker
++	vconsole-io
++	vconsole-pc
++	vconsole-wake
++	vconsole-controller-pc
++	vconsole-worker-pc
++	vconsole-owner-pc
++	vconsole-io-pc
++	vconsole-boot-pc
+ 	pci		pcipc
+ 	archgeneric	devkbd i8259 i8253
+ 	archacpi	mp apic squidboy ec hpet
+diff --git a/sys/src/9/pc64/mkfile b/sys/src/9/pc64/mkfile
+--- a/sys/src/9/pc64/mkfile
++++ b/sys/src/9/pc64/mkfile
+@@ -148,6 +148,8 @@
+ 
+ irq.$O pcipc.$O:	../port/pci.h io.h
+ virtio10pc.$O:	../port/virtio10.h
++<vconsole.mk
++
+ initcode.out:		init9.$O initcode.$O /$objtype/lib/libc.a
+ 	$LD -l -R1 -s -o $target $prereq
+ 

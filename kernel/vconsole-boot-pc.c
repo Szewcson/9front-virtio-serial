@@ -2,12 +2,12 @@
 #ifdef QGA_HOST_TEST
 #include "../tests/vconsole-boot-shim.h"
 #else
-#include <u.h>
-#include "/sys/src/9/port/lib.h"
-#include "/sys/src/9/pc64/mem.h"
-#include "/sys/src/9/pc64/dat.h"
-#include "/sys/src/9/pc64/fns.h"
-#include "/sys/src/9/port/pci.h"
+#include "u.h"
+#include "../port/lib.h"
+#include "mem.h"
+#include "dat.h"
+#include "fns.h"
+#include "../port/pci.h"
 #define QGA_VCONSOLE_KERNEL
 #endif
 #include "vconsole-owner-pc.h"
@@ -37,7 +37,7 @@ struct BootState {
 	VcPcOwners owners;
 	BootContext context[BootEpochs];
 	Pcidev *device;
-	int used;
+	int used, wantirq;
 };
 #ifndef QGA_HOST_TEST
 static BootState boot;
@@ -55,6 +55,7 @@ bootacquire(BootState *b, BootContext *c)
 	reserve = sizeof *b + BootAllocatorReserve;
 	if(reserve >= VcPumpBudgetMax) return VcInvalid;
 	if((result = vcpcownerclaim(&b->owners, &c->owner, b->device)) < 0) return result;
+	if(b->wantirq && vcpcownerirq(&c->owner)<0) return VcInvalid;
 	if(vcpcctlops(&ops) < 0 || vcpcdmaops(&dma) < 0 ||
 	   vccinit(&c->controller, &c->owner.pc.mmio, &ops, &c->gate,
 		&dma, nil, c->owner.identity) < 0 ||
@@ -128,7 +129,10 @@ bootproc(void*)
 	Pcidev *p;
 	Rendez pause;
 	int found, scanned, result;
+	char *irqmode;
 	memset(&pause, 0, sizeof pause);
+	irqmode=getconf("qgavirtioirq");
+	boot.wantirq=irqmode!=nil && strcmp(irqmode,"1")==0;
 	/* Enumerate only the bounded console PCI matches, never other devices.
 	 * Multiple controllers are ambiguous: do not silently choose one. */
 	found = scanned = 0;
@@ -151,7 +155,8 @@ bootproc(void*)
 		for(;;){
 			bootstep(c);
 			if(c->phase == BootOnline && c->polls == 0){
-				print("vconsole: #Y0 ready, epoch %d/%d, polling INTx masked\n", boot.used, BootEpochs);
+				print("vconsole: #Y0 ready, epoch %d/%d, %s\n", boot.used, BootEpochs,
+					boot.wantirq ? "checked INTx with health polling" : "polling INTx masked");
 				c->polls = 1; /* log once; no startup deadline while online */
 			}
 			if(c->phase == BootRetired || c->phase == BootFailed) break;

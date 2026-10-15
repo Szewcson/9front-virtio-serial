@@ -3,6 +3,8 @@
 These are instructions, not default build actions. Keep a VM console, verified
 stock kernel/configuration and host access for recovery. The existing test VM
 already has virtio enabled; the repository split does not require reinstalling.
+Native build/VM checks have not been rerun after the split; the commands below
+are procedures, not new test results.
 
 ## Build and inspect
 
@@ -14,9 +16,13 @@ mk kernel-check
 rc kernel/build-pc64.rc
 ```
 
-The build derives `pc64qga` from stock PC64 configuration, stages helper sources
-under `/sys/src/9/pc64/qga9kern` and links `9pc64qga`; stock `pc64` and
-`9pc64` are not replaced. Common kernel build objects may be regenerated.
+The build derives `pc64qga` from stock PC64 configuration, exports normal port/pc
+sources under a new `/sys/src/9/pc64/vconsole-src-$pid` tree and links `9pc64qga`.
+Existing configuration/output names are refused; use an unused name with
+`rc kernel/build-pc64.rc pc64vconsoleTest` if necessary. The corresponding output
+is `9pc64vconsoleTest`. Stock `pc64` and `9pc64` are not replaced; ordinary shared
+kernel objects may be regenerated. No generated C wrapper is required.
+See [UPSTREAM](UPSTREAM.md). Explicit `mk install-man` installs the device manual.
 The kernel configuration must exclude competing drivers for the selected PCI
 console controller. Exactly one supported console controller is required.
 
@@ -32,8 +38,9 @@ After arranging the guest kernel/service transition, use PVE's normal agent
 option; do not add a competing custom socket/channel:
 
 ```sh
-qm set <VMID> --agent enabled=1,type=virtio,freeze-fs=0,fstrim_cloned_disks=0
-qm showcmd <VMID> --pretty
+VMID=123 # replace with the actual VMID
+qm set "$VMID" --agent enabled=1,type=virtio,freeze-fs=0,fstrim_cloned_disks=0
+qm showcmd "$VMID" --pretty
 ```
 
 This hardware change requires a controlled full Stop/Start. Keep filesystem
@@ -69,16 +76,20 @@ Configure/start the agent using the separate QGA repository's
 `scripts/start.rc` and `scripts/service-virtio.example`, only once and from a
 clean native service namespace. No desktop filesystem export or SSH keys are
 needed. Fixed driver data/status permissions are eve-only; do not chmod #Y.
+Endpoint publication is asynchronous. The revised QGA helper has a stat-only
+readiness wait (up to 30 one-second attempts), followed by one launch or timeout.
+Its native validation/deployment is pending; earlier installed helpers may still
+have the one-shot race. Verify agent presence after the endpoint becomes ready.
 
 ## Host smoke tests
 
 Use the scripts from the separate QGA repository on PVE:
 
 ```sh
-qm agent <VMID> ping
-qm agent <VMID> info
-perl ./test-proxmox.pl <VMID>
-perl ./test-proxmox-exec.pl <VMID>
+qm agent "$VMID" ping
+qm agent "$VMID" info
+perl ./test-proxmox.pl "$VMID"
+perl ./test-proxmox-exec.pl "$VMID"
 ```
 
 They use synthetic test data, not existing host files. The file script retains

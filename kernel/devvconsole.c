@@ -2,12 +2,12 @@
 #ifdef QGA_HOST_TEST
 #include "../tests/vconsole-dev-shim.h"
 #else
-#include <u.h>
-#include "/sys/src/9/port/lib.h"
-#include "/sys/src/9/pc64/mem.h"
-#include "/sys/src/9/pc64/dat.h"
-#include "/sys/src/9/pc64/fns.h"
-#include "/sys/src/9/port/error.h"
+#include "u.h"
+#include "../port/lib.h"
+#include "mem.h"
+#include "dat.h"
+#include "fns.h"
+#include "../port/error.h"
 #define QGA_VCONSOLE_KERNEL
 #endif
 #include "vconsole-dev.h"
@@ -260,15 +260,19 @@ statusread(VcPcDev *d, void *out, long count, vlong offset)
 {
 	VcIoStatus status;
 	char buf[StatusMax];
+	Vcu64 deliveries;
 	int n;
 	if(vciostatus(&d->io->io, &status) < 0) error("vconsole status unavailable");
+	if(vcirqdeliveries(&d->worker->wake->irq,&deliveries)<0) error("vconsole IRQ status unavailable");
 	n = snprint(buf, sizeof buf, "identity %llud\nepoch %llud\nowner-generation %llud\n"
 		"owner %d\nstopped %d\nclaimed %d\nhandle-held %d\n"
-		"requests free %d reserved %d queued %d busy %d done %d taking %d\n",
+		"requests free %d reserved %d queued %d busy %d done %d taking %d\n"
+		"irq-vector %d\nirq-deliveries %llud\n",
 		(uvlong)status.identity, (uvlong)status.epoch, (uvlong)status.generation,
 		status.owner, status.stopped, status.claimed, status.held,
 		status.phase[VcIoFree], status.phase[VcIoReserved], status.phase[VcIoQueued],
-		status.phase[VcIoBusy], status.phase[VcIoDone], status.phase[VcIoTaking]);
+		status.phase[VcIoBusy], status.phase[VcIoDone], status.phase[VcIoTaking],
+		vcirqvector(&d->worker->wake->irq),(uvlong)deliveries);
 	if(n < 0 || n >= (int)sizeof buf-1) error("vconsole status overflow");
 	if(offset >= n) return 0; /* before vlong narrowing, never wrap large offsets */
 	if(count > n-offset) count = n-offset;

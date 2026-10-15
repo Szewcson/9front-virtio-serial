@@ -16,7 +16,7 @@ struct VcPcOwner {
 	VcPcOwners *registry;
 	Pcidev *device;
 	Vcu64 identity;
-	int slot, claimed, saved, prepared, irqtried, detached;
+	int slot, claimed, saved, prepared, irqtried, detached, wantirq;
 	VcController *controller;
 	VcPcWake *wake;
 };
@@ -44,14 +44,18 @@ int vcpcownerbind(VcPcOwner*, VcController*);
  * retained epochs and allocator overhead need separate budget.
  * A smaller caller limit may reserve those extras too. */
 int vcpcownerprepare(VcPcOwner*, int, Vcu64);
+/* Opt in before start. Requires the checked native IRQ API build; unsupported
+ * builds refuse, never silently unmask an unchecked route. */
+int vcpcownerirq(VcPcOwner*);
 /* Bound controller already prepared using &owner.pc.mmio and owner.identity.
  * Fresh wake initialized from same epoch, boot-pinned. Attempt INTx registration,
- * then enable BME with readback, KEEP INTx MASKED, then DRIVER_OK via vccstart.
- * Native intrenable returns void: registration is attempted, not proven. Masking
- * prevents an unhandled interrupt storm if it failed; bounded worker deadlines
- * poll queues. Unmasking requires future checked-registration support/proof.
- * Native intrenable can panic on its own allocation failure; no guarantee of
- * recoverable platform resource exhaustion is supplied by this adapter. */
+ * then enable BME with readback and masked INTx, then DRIVER_OK via vccstart.
+ * Default intrenable returns void: registration is attempted, not proven;
+ * INTx remains masked and bounded worker deadlines poll queues. A checked-API
+ * build with explicit owner opt-in binds the installed vector under mailbox
+ * lock and unmasks only after DRIVER_OK. This does not prove actual delivery.
+ * Legacy intrenable can panic on allocation failure. Failed/ambiguous PCI
+ * operations retain ownership; no full platform fault-safety claim follows. */
 int vcpcownerstart(VcPcOwner*, VcController*, VcPcWake*);
 /* Supervisor-only first half of stop: close admission, mask INTx/clear BME,
  * deregister once. No reset/free; safe while waiting for worker/Chan leases. */

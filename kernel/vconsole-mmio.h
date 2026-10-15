@@ -3,21 +3,34 @@
 #define QGA9_VCONSOLE_MMIO_H
 #include "vconsole.h"
 
+#if defined(QGA_VCONSOLE_KERNEL) && !defined(QGA_HOST_TEST)
+#include "../port/virtio10.h"
+/* Reuse native definitions only while they match this checked wire ABI. */
+typedef char VcNativeCommonSize[(Vconf_sz == 56) ? 1 : -1];
+typedef char VcNativeDescriptorSize[(sizeof(Vdesc) == 16) ? 1 : -1];
+typedef char VcNativeUsedSize[(sizeof(Vused) == 8) ? 1 : -1];
+#define VCREG(native, test) native
+#else
+/* Native-compatible user/host fixtures have no kernel Pcidev/Vio ABI. */
+#define VCREG(native, test) test
+#endif
+
 enum {
 	VcMmCommon = 0, VcMmNotify, VcMmIsr, VcMmDevice,
 	VcMmEmpty = 0, VcMmMapped, VcMmReset, VcMmFeatures, VcMmRunning, VcMmFault,
 	VcMmMapMax = 4096, VcMmResetPolls = 1000, VcMmConfigTries = 8,
-	VcRegDevSelect = 0, VcRegDevFeature = 4,
-	VcRegDrvSelect = 8, VcRegDrvFeature = 12,
-	VcRegConfigVector = 16, VcRegQueues = 18,
-	VcRegStatus = 20, VcRegGeneration = 21,
-	VcRegQueueSelect = 22, VcRegQueueSize = 24,
-	VcRegQueueVector = 26,
-	VcRegQueueEnable = 28, VcRegQueueNotify = 30,
-	VcRegQueueDesc = 32, VcRegQueueAvail = 40, VcRegQueueUsed = 48,
-	VcAck = 1, VcDriver = 2, VcDriverOk = 4, VcFeaturesOk = 8,
-	VcNeedsReset = 64, VcFailed = 128,
+	VcRegDevSelect = VCREG(Vconf_devfeatsel, 0), VcRegDevFeature = VCREG(Vconf_devfeat, 4),
+	VcRegDrvSelect = VCREG(Vconf_drvfeatsel, 8), VcRegDrvFeature = VCREG(Vconf_drvfeat, 12),
+	VcRegConfigVector = VCREG(Vconf_msixcfg, 16), VcRegQueues = VCREG(Vconf_nqueues, 18),
+	VcRegStatus = VCREG(Vconf_status, 20), VcRegGeneration = VCREG(Vconf_cfggen, 21),
+	VcRegQueueSelect = VCREG(Vconf_queuesel, 22), VcRegQueueSize = VCREG(Vconf_queuesize, 24),
+	VcRegQueueVector = VCREG(Vconf_queuemsixvect, 26),
+	VcRegQueueEnable = VCREG(Vconf_queueenable, 28), VcRegQueueNotify = VCREG(Vconf_queuenotifyoff, 30),
+	VcRegQueueDesc = VCREG(Vconf_queuedesc, 32), VcRegQueueAvail = VCREG(Vconf_queueavail, 40), VcRegQueueUsed = VCREG(Vconf_queueused, 48),
+	VcAck = VCREG(Sacknowledge, 1), VcDriver = VCREG(Sdriver, 2), VcDriverOk = VCREG(Sdriverok, 4), VcFeaturesOk = VCREG(Sfeaturesok, 8),
+	VcNeedsReset = 64, VcFailed = VCREG(Sfailed, 128),
 };
+#undef VCREG
 
 typedef struct VcMmOps VcMmOps;
 typedef struct VcMmio VcMmio;

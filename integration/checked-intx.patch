@@ -1,0 +1,78 @@
+diff --git a/sys/src/9/pc/irq.c b/sys/src/9/pc/irq.c
+--- a/sys/src/9/pc/irq.c
++++ b/sys/src/9/pc/irq.c
+@@ -145,22 +145,26 @@
+ 	return r;
+ }
+ 
+-void
+-intrenable(int irq, void (*f)(Ureg*, void*), void* a, int tbdf, char *name)
++static int
++irqenable(int irq, void (*f)(Ureg*, void*), void* a, int tbdf, char *name, int fatal)
+ {
+ 	Vctl **pv, *v;
++	int vector;
+ 
+ 	if(f == nil){
+ 		print("intrenable: nil handler for %d, tbdf 0x%uX for %s\n",
+ 			irq, tbdf, name);
+-		return;
++		return -1;
+ 	}
+ 
+ 	if(arch->intrirqno != nil)
+ 		irq = (*arch->intrirqno)(irq, tbdf);
+ 
+-	if((v = xalloc(sizeof(Vctl))) == nil)
+-		panic("intrenable: out of memory");
++	if((v = xalloc(sizeof(Vctl))) == nil){
++		if(fatal)
++			panic("intrenable: out of memory");
++		return -1;
++	}
+ 
+ 	v->f = f;
+ 	v->a = a;
+@@ -183,7 +187,7 @@
+ 		iunlock(&vctllock);
+ 		if(v != nil)
+ 			xfree(v);
+-		return;
++		return -1;
+ 	}
+ 	pv = &vctl[v->vno];
+ 	if(*pv != nil){
+@@ -214,7 +218,22 @@
+ 			goto Unlockandfree;
+ 		}
+ 	}
++	/* Do not access the installed Vctl after unlocking: it may retire. */
++	vector = v->vno;
+ 	iunlock(&vctllock);
++	return vector;
++}
++
++int
++intrenablechecked(int irq, void (*f)(Ureg*, void*), void* a, int tbdf, char *name)
++{
++	return irqenable(irq, f, a, tbdf, name, 0);
++}
++
++void
++intrenable(int irq, void (*f)(Ureg*, void*), void* a, int tbdf, char *name)
++{
++	irqenable(irq, f, a, tbdf, name, 1);
+ }
+ 
+ void
+diff --git a/sys/src/9/pc64/fns.h b/sys/src/9/pc64/fns.h
+--- a/sys/src/9/pc64/fns.h
++++ b/sys/src/9/pc64/fns.h
+@@ -70,6 +70,7 @@
+ void	insl(int, void*, int);
+ void	intrdisable(int, void (*)(Ureg *, void *), void*, int, char*);
+ void	intrenable(int, void (*)(Ureg*, void*), void*, int, char*);
++int	intrenablechecked(int, void (*)(Ureg*, void*), void*, int, char*);
+ void	introff(void);
+ void	intron(void);
+ void	invlpg(uintptr);

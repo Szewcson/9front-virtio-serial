@@ -1,10 +1,11 @@
 /* SPDX-License-Identifier: MIT */
-/* Compile into the future PC64 driver, not the agent. No IRQ registration. */
-#include <u.h>
-#include "/sys/src/9/port/lib.h"
-#include "/sys/src/9/pc64/mem.h"
-#include "/sys/src/9/pc64/dat.h"
-#include "/sys/src/9/pc64/fns.h"
+/* Native PC64 wake adapter; IRQ registration belongs to the owner adapter. */
+#include "u.h"
+#include "../port/lib.h"
+#include "mem.h"
+#include "dat.h"
+#include "fns.h"
+#include "ureg.h"
 #define QGA_VCONSOLE_KERNEL
 #include "vconsole-wake.h"
 
@@ -78,9 +79,11 @@ void
 vcpcwakeintr(Ureg *ureg, void *aux)
 {
 	VcPcWake *w;
-	USED(ureg);
 	w = aux;
-	if(w != nil) vcirqinterrupt(&w->irq);
+	/* Native spurious dispatch also calls unrelated handlers. Such a call is
+	 * NOT proof of routing and must not consume this device's read-clear ISR. */
+	if(w != nil && ureg != nil && ureg->type >= 32 && ureg->type < 256)
+		vcirqdispatch(&w->irq,ureg->type);
 }
 
 int

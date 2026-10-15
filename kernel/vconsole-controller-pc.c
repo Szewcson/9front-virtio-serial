@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: MIT */
-#include <u.h>
-#include "/sys/src/9/port/lib.h"
-#include "/sys/src/9/pc64/mem.h"
-#include "/sys/src/9/pc64/dat.h"
-#include "/sys/src/9/pc64/fns.h"
+#include "u.h"
+#include "../port/lib.h"
+#include "mem.h"
+#include "dat.h"
+#include "fns.h"
 #define QGA_VCONSOLE_KERNEL
 #include "vconsole-controller-pc.h"
 

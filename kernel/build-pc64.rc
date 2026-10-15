@@ -1,21 +1,26 @@
 #!/bin/rc
 # SPDX-License-Identifier: MIT
-# Build only. Does NOT install, change boot files, configure PCI, or reboot.
-# Run from the project checkout, native PC64 sources/toolchain required.
+# Build only; no install, boot changes, PCI configuration or reboot.
 rfork e
+if(! ~ $#* 0 1 2){ echo 'usage: rc kernel/build-pc64.rc [NEW-CONFIG-NAME [--checked-irq]]' >[1=2]; exit usage }
 if(! test -r kernel/vconsole-boot-pc.c){ echo 'run from project root' >[1=2]; exit usage }
-qgasrc=`{pwd}
-cd /sys/src/9/pc64 || exit source
-# Dedicated config/output and staging directory; never replace pc64/9pc64.
-mkdir -p qga9kern
-cp $qgasrc/kernel/*.c $qgasrc/kernel/*.h qga9kern/ || exit copy
-for(i in vconsole vconsole-mmio vconsole-dma vconsole-irq vconsole-pump vconsole-stream vconsole-controller vconsole-worker vconsole-io){
-	{echo '#include <u.h>'
-	 echo '#include "/sys/src/9/port/lib.h"'
-	 echo '#define QGA_VCONSOLE_KERNEL'
-	 echo '#include "'^$i^'.c"'} >qga9kern/$i-kernel.c
+vc_checkout=`{pwd}
+vc_conf=pc64qga
+if(~ $#* 1 2) vc_conf=$1
+vc_irqflags=()
+if(~ $#* 2){
+	if(! ~ $2 --checked-irq) exit usage
+	vc_irqflags=-DVCONSOLE_CHECKED_IRQ
 }
-awk '/^dev$/ {print; print "\tvconsole"; next}
- /^misc$/ {print; n=split("vconsole vconsole-mmio vconsole-dma vconsole-irq vconsole-pump vconsole-stream vconsole-controller vconsole-worker vconsole-io vconsole-pc vconsole-wake vconsole-controller-pc vconsole-worker-pc vconsole-owner-pc vconsole-io-pc vconsole-boot-pc", modules, " "); for(i=1; i<=n; i++) print "\t" modules[i]; next}
- {print}' pc64 >pc64qga
-mk -f $qgasrc/kernel/pc64.mk 'CONF=pc64qga' 9pc64qga
+if(! @{echo $vc_conf | awk '{if(NF == 1 && $0 ~ /^[a-zA-Z][a-zA-Z0-9]*$/) ok=1} END{if(NR != 1 || !ok) exit 1}'}) exit name
+vc_stage=/sys/src/9/pc64/vconsole-src-$pid
+cd /sys/src/9/pc64 || exit source
+if(test -e $vc_conf || test -e 9^$vc_conf){ echo 'configuration/output exists; use a new name' >[1=2]; exit exists }
+cd $vc_checkout || exit source
+rc scripts/export-upstream.rc $vc_stage || exit export
+awk -f integration/config.awk integration/port.modules integration/pc.modules /sys/src/9/pc64/pc64 >/sys/src/9/pc64/$vc_conf || exit configuration
+cd /sys/src/9/pc64 || exit source
+mk -f $vc_checkout/kernel/pc64.mk 'CONF='^$vc_conf 'VCSOURCE='^$vc_stage 'VCPORT='^$vc_stage^'/sys/src/9/port' 'VCPC='^$vc_stage^'/sys/src/9/pc' 'VCIRQFLAGS='^$vc_irqflags 9^$vc_conf || exit build
+echo 'built:' /sys/src/9/pc64/9^$vc_conf
+echo 'stock configuration, images and boot files were not replaced'
+exit ''

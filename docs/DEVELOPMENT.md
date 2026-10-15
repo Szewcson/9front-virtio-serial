@@ -17,7 +17,8 @@ are retained for compatibility, not userspace build dependencies.
 - `vconsole-dma.[ch]`: private split-queue arenas, immutable used snapshots,
   leases/receipts and confirmed-reset-gated release.
 - `vconsole-irq.[ch]`, `vconsole-wake.[ch]`: locked IRQ mailbox, pinned native
-  wake targets; current hardware path remains polling with INTx masked.
+  wake targets, checked vector gating and numeric delivery telemetry; default
+  hardware policy remains polling with INTx masked.
 - `vconsole-pump.[ch]`, `vconsole-stream.[ch]`: single-worker control/data
   processing, bounded FIFO/backpressure; host reconnect preserves guest ownership.
 - `vconsole-controller*.[ch]`, `vconsole-worker*.[ch]`,
@@ -28,6 +29,8 @@ are retained for compatibility, not userspace build dependencies.
 - `vconsole-boot-pc.c`: opt-in supervisor, fresh boot-pinned epochs,
   reference-gated publication/withdrawal/recovery.
 - `build-pc64.rc`, `pc64.mk`: separate full native kernel build.
+- `integration/`, `scripts/export-upstream.rc`, `man/3/vconsole`: native source
+  layout, explicit header rules/configuration patch and device manual.
 - `boot-config.awk`, `enable-pc64.rc`: conservative local boot conversion,
   verified backups, explicit installation without reboot.
 
@@ -41,8 +44,8 @@ make -C tests sanitize
 make -C tests analyze
 ```
 
-Linux runs 14 C suites and 13 boot-config Python methods. It requires C99,
-pthreads, make, awk and Python, not libresolv or the QGA sources.
+Linux runs 15 C suites and 21 boot/config/integration Python methods. It requires
+C99, pthreads, make, awk, git (patch fixtures) and Python, not libresolv or QGA.
 These are simulated hardware/kernel-primitive tests, not a native kernel build.
 Sanitizer targets use separate output and ASan/UBSan/leak checks.
 Runtime startup may require an approved environment; failed sanitizer startup
@@ -60,6 +63,8 @@ make -C tests OUT=../build/tsan \
 ```
 
 This checks host fixtures/locks, not actual native DMA memory ordering.
+Current TSan attempts failed runtime initialization with unexpected memory
+mapping; see [STATUS](STATUS.md). The recipe is not a passing-run claim.
 
 ## Native checks
 
@@ -71,6 +76,7 @@ rc kernel/build-pc64.rc
 
 Native tests run 9 portable C suites. `kernel-check` compiles 17 objects
 against actual PC64 headers; the full build additionally validates kernel link.
+Native post-split checks have not been rerun.
 The optional `mk qga9-native-vconsole-access` binary requires a live #Y0
 endpoint and explicitly tests denial to a private child changed to none; it is
 not run automatically. No default target installs, enables or reboots.
@@ -88,5 +94,12 @@ Preserve a stock kernel and console recovery. Record real capability/layout,
 exact named port, exclusive owner, binary I/O and repeated host reconnect.
 Run the separate QGA host scripts via PVE's synchronized client; do not race a
 second socket reader. Check cold startup and real reset/error/hot-unplug behavior.
-Masked INTx with polling is not a checked interrupt implementation.
+The revised QGA helper has a bounded readiness wait for asynchronous #Y
+publication; its native execution/deployment is still pending.
+Masked INTx with polling is not IRQ evidence. The optional checked-API patch and
+activation path are locally tested with mocked native primitives, not native
+hardware. See [IRQ](IRQ.md) for the required distinction and live checks.
 See [STATUS](STATUS.md) for executed evidence versus missing gates.
+The native manual and upstream-layout package are prepared; see
+[UPSTREAM](UPSTREAM.md). Native export/build/link is pending while the VM is
+offline. Driver-neutral compatibility names remain a future migration decision.

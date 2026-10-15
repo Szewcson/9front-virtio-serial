@@ -1,4 +1,12 @@
 /* SPDX-License-Identifier: MIT */
+#if !defined(QGA_HOST_TEST) && !defined(VCONSOLE_USER_TEST) && !defined(QGA_VCONSOLE_KERNEL)
+#include "u.h"
+#include "../port/lib.h"
+#include "mem.h"
+#include "dat.h"
+#include "fns.h"
+#define QGA_VCONSOLE_KERNEL
+#endif
 #include "vconsole-irq.h"
 
 static int
@@ -19,6 +27,7 @@ vcirqinit(VcIrq *irq, const VcIrqOps *ops, void *aux, Vcu64 epoch)
 	irq->ops = *ops;
 	irq->aux = aux;
 	irq->epoch = epoch;
+	irq->vector = -1;
 	return 0;
 }
 
@@ -72,6 +81,7 @@ vcirqinterrupt(VcIrq *irq)
 		result = VcFault;
 	}else{
 		status &= VcIrqQueue|VcIrqConfig; /* ignore reserved bits */
+		if(status != 0 && irq->deliveries != ~(Vcu64)0) irq->deliveries++;
 		needed = status != 0 ? signal(irq, status) : 0;
 		result = status != 0;
 	}
@@ -143,4 +153,39 @@ vcirqdrained(VcIrq *irq)
 	drained = irq->closed && irq->wakers == 0;
 	irq->ops.unlock(irq->aux);
 	return drained;
+}
+
+int
+vcirqdeliveries(VcIrq *irq, Vcu64 *out)
+{
+	if(!valid(irq) || out == nil) return VcInvalid;
+	irq->ops.lock(irq->aux); *out=irq->deliveries; irq->ops.unlock(irq->aux);
+	return 0;
+}
+
+int
+vcirqroute(VcIrq *irq, int vector)
+{
+	int result;
+	if(!valid(irq) || vector<32 || vector>=256) return VcInvalid;
+	irq->ops.lock(irq->aux);
+	result=irq->closed || irq->vector!=-1 ? VcInvalid : 0;
+	if(result==0) irq->vector=vector;
+	irq->ops.unlock(irq->aux); return result;
+}
+
+int
+vcirqvector(VcIrq *irq)
+{
+	int vector;
+	if(!valid(irq)) return -1;
+	irq->ops.lock(irq->aux); vector=irq->vector; irq->ops.unlock(irq->aux);
+	return vector;
+}
+
+int
+vcirqdispatch(VcIrq *irq, int vector)
+{
+	if(vector<32 || vector>=256 || vcirqvector(irq)!=vector) return 0;
+	return vcirqinterrupt(irq);
 }

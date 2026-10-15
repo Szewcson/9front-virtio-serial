@@ -2,12 +2,12 @@
 #ifdef QGA_HOST_TEST
 #include "../tests/vconsole-owner-pc-shim.h"
 #else
-#include <u.h>
-#include "/sys/src/9/port/lib.h"
-#include "/sys/src/9/pc64/mem.h"
-#include "/sys/src/9/pc64/dat.h"
-#include "/sys/src/9/pc64/fns.h"
-#include "/sys/src/9/port/pci.h"
+#include "u.h"
+#include "../port/lib.h"
+#include "mem.h"
+#include "dat.h"
+#include "fns.h"
+#include "../port/pci.h"
 #define QGA_VCONSOLE_KERNEL
 #endif
 #include "vconsole-owner-pc.h"
@@ -146,6 +146,17 @@ vcpcownerprepare(VcPcOwner *o, int capacity, Vcu64 limit)
 }
 
 int
+vcpcownerirq(VcPcOwner *o)
+{
+	if(o == nil || !o->claimed || o->wake != nil || o->detached) return VcInvalid;
+#ifdef VCONSOLE_CHECKED_IRQ
+	o->wantirq=1; return 0;
+#else
+	return VcInvalid;
+#endif
+}
+
+int
 vcpcownerstart(VcPcOwner *o, VcController *c, VcPcWake *wake)
 {
 	int value, result;
@@ -158,14 +169,28 @@ vcpcownerstart(VcPcOwner *o, VcController *c, VcPcWake *wake)
 	if(value < 0 || (value&(2|4|VcPcIntDisable)) != (2|VcPcIntDisable) ||
 	   idleconfig(o->device) < 0) return VcInvalid;
 	o->wake = wake;
-	o->irqtried = 1; /* set BEFORE native registration, not an asserted success */
-	intrenable(o->device->intl, vcpcwakeintr, wake, o->device->tbdf, "vconsole");
-	/* Native registration has no success result. Keep INTx masked until a
-	 * checked native registration API exists; bounded worker waits poll rings.
-	 * Never turn a silent registration failure into an unhandled IRQ storm. */
+#ifdef VCONSOLE_CHECKED_IRQ
+	if(o->wantirq){
+		result=intrenablechecked(o->device->intl,vcpcwakeintr,wake,o->device->tbdf,"vconsole");
+		if(result < 32 || result >= 256){ vccstop(c); vcirqclose(&wake->irq); return VcFault; }
+		o->irqtried=1;
+		if(vcirqroute(&wake->irq,result)<0){ vccstop(c); vcirqclose(&wake->irq); return VcFault; }
+	}else
+#endif
+	{
+		o->irqtried = 1; /* attempted only, no checked success in legacy mode */
+		intrenable(o->device->intl, vcpcwakeintr, wake, o->device->tbdf, "vconsole");
+	}
+	/* Keep INTx masked through BME/DRIVER_OK. The legacy API cannot establish
+	 * success; only the explicit checked route below may subsequently unmask. */
 	result = writecommand(o, value|4|VcPcIntDisable);
 	if(result == 0) result = vccstart(c, &wake->irq);
+#ifdef VCONSOLE_CHECKED_IRQ
+	/* Only a verified installed route, prepared ISR and DRIVER_OK may unmask. */
+	if(result == 0 && o->wantirq) result=writecommand(o,(value|4)&~VcPcIntDisable);
+#endif
 	if(result < 0){
+		writecommand(o,(value|VcPcIntDisable)&~4); /* best effort, retain on ambiguity */
 		vccstop(c); vcirqclose(&wake->irq);
 		/* Claim/storage retained. Cooperative stop performs checked cleanup. */
 	}

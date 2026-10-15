@@ -22,6 +22,7 @@ int vcpcownerclaim(VcPcOwners *r, VcPcOwner *o, Pcidev *p)
 	return result;
 }
 int vcpcctlops(VcCtlOps *o) { memset(o, 0, sizeof *o); return stage(); }
+int vcpcownerirq(VcPcOwner *o) { USED(o); return VcInvalid; }
 int vcpcdmaops(VcDmaOps *o) { memset(o, 0, sizeof *o); return stage(); }
 int vccinit(VcController *c, VcMmio *m, const VcCtlOps *o, void *a,
 	const VcDmaOps *d, void *da, Vcu64 id)

@@ -1,15 +1,15 @@
 /* SPDX-License-Identifier: MIT */
-/* Compile into a future PC64 kernel driver, never the user-space agent. */
+/* Native PC64 MMIO and coherent DMA adapter. */
 #ifdef QGA_HOST_TEST
 #include "../tests/vconsole-pc-shim.h"
 #else
-#include <u.h>
-#include "/sys/src/9/port/lib.h"
-#include "/sys/src/9/pc64/mem.h"
-#include "/sys/src/9/pc64/dat.h"
-#include "/sys/src/9/pc64/fns.h"
-#include "/sys/src/9/port/pci.h"
-#include "/sys/src/9/pc/io.h"
+#include "u.h"
+#include "../port/lib.h"
+#include "mem.h"
+#include "dat.h"
+#include "fns.h"
+#include "../port/pci.h"
+#include "../pc/io.h"
 #define QGA_VCONSOLE_KERNEL
 #endif
 #include "vconsole-pc.h"

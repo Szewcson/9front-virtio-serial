@@ -1,0 +1,10 @@
+devvconsole
+vconsole
+vconsole-mmio
+vconsole-dma
+vconsole-irq
+vconsole-pump
+vconsole-stream
+vconsole-controller
+vconsole-worker
+vconsole-io

@@ -13,5 +13,6 @@ void iunlock(Lock*);
 int pcicfgr16(Pcidev*, int);
 void pcicfgw16(Pcidev*, int, int);
 void intrenable(int, void(*)(Ureg*, void*), void*, int, char*);
+int intrenablechecked(int, void(*)(Ureg*, void*), void*, int, char*);
 void intrdisable(int, void(*)(Ureg*, void*), void*, int, char*);
 #endif

@@ -16,7 +16,7 @@ struct VcPcWake {
 int vcpcwakeinit(VcPcWake*, const VcMmio*);
 void vcpcwakeintr(Ureg*, void*);
 /* One worker only. Bounded health-check deadline 1..1000 ms, no lock held.
- * tsleep may throw a native note/error: the future kproc owns that error frame. */
+ * tsleep may throw a native note/error: the worker kproc owns that error frame. */
 int vcpcwakewait(VcPcWake*, int, int*);
 /* Nonconsuming variant for vccstep's sole ownership of latched IRQ events.
  * May throw; worker adapter catches the note/error outside controller guards. */

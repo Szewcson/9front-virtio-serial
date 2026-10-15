@@ -2,12 +2,12 @@
 #ifdef QGA_HOST_TEST
 #include "../tests/vconsole-dev-shim.h"
 #else
-#include <u.h>
-#include "/sys/src/9/port/lib.h"
-#include "/sys/src/9/pc64/mem.h"
-#include "/sys/src/9/pc64/dat.h"
-#include "/sys/src/9/pc64/fns.h"
-#include "/sys/src/9/port/error.h"
+#include "u.h"
+#include "../port/lib.h"
+#include "mem.h"
+#include "dat.h"
+#include "fns.h"
+#include "../port/error.h"
 #define QGA_VCONSOLE_KERNEL
 #endif
 #include "vconsole-io-pc.h"

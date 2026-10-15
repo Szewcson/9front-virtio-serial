@@ -93,11 +93,23 @@ void main(void)
 	Fixture f;
 	VcIrqOps missing;
 	int bits, i, reads;
+	Vcu64 deliveries;
 	memset(&missing, 0, sizeof missing);
 	check(vcirqinit(nil, &missing, nil, 1) == VcInvalid &&
 		vcirqinit(&f.irq, &missing, nil, 0) == VcInvalid &&
 		vcirqinterrupt(nil) == VcInvalid && !vcirqready(nil) && !vcirqdrained(nil),
 		"invalid or incomplete mailbox rejected");
+	init(&f);
+	check(vcirqvector(&f.irq)==-1 && vcirqroute(&f.irq,31)==VcInvalid &&
+		vcirqroute(&f.irq,48)==0 && vcirqroute(&f.irq,49)==VcInvalid,
+		"checked vector assigned once, invalid vector cannot bind");
+	f.status=1;
+	check(vcirqdispatch(&f.irq,49)==0 && f.reads==0 &&
+		vcirqdeliveries(&f.irq,&deliveries)==0 && deliveries==0,
+		"native spurious fallback on another vector is not IRQ evidence");
+	check(vcirqdispatch(&f.irq,48)==1 && vcirqdeliveries(&f.irq,&deliveries)==0 &&
+		deliveries==1,"matching vector plus device ISR counts actual delivery");
+	check(vcirqtake(&f.irq,&bits)==0 && bits==1,"consume matched delivery");
 	init(&f);
 	check(!vcirqready(&f.irq) && vcirqtake(&f.irq, &bits) == 0 && bits == 0,
 		"empty mailbox predicate and consumption");

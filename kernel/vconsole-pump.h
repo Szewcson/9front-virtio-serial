@@ -64,7 +64,7 @@ int vcpumpstart(VcPump*);
  * Progress/Again bits: Again means runnable CPU work, NOT TX backpressure;
  * otherwise wait on IRQ with a bounded health deadline. No data I/O yet. */
 int vcpumpstep(VcPump*, int);
-/* Worker-only future stream ownership API. Claim accepts ownership and queues
+/* Worker-only stream ownership API. Claim accepts ownership and queues
  * OPEN; alive stays false until that OPEN is posted and successfully notified.
  * Returns VcInvalid on unavailable port or full reply FIFO, no partial claim.
  * Release also accepts a still-pending claim. Tokens never cancel a new owner. */

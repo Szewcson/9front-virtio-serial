@@ -1,0 +1,2 @@
+# Unified-diff context includes a marker space before native tabs/blank lines.
+integration/*.patch -whitespace

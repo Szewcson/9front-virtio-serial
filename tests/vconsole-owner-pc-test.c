@@ -16,6 +16,7 @@ struct NativeFixture {
 	int registers, unregisters, starts, resets, detaches, leases, failstart, failreset, prepares;
 	Vcu64 preparelimit;
 	int isrreads, wakes;
+	int failirq;
 	pthread_mutex_t config, irq;
 };
 static NativeFixture *fixtures[8];
@@ -165,6 +166,14 @@ intrdisable(int irq, void (*fn)(Ureg*, void*), void *aux, int tbdf, char *name)
 	must(irq == f->device.intl && tbdf == f->device.tbdf && fn == vcpcwakeintr &&
 		strcmp(name, "vconsole") == 0 && vcirqdrained(&f->wake.irq));
 	f->unregisters++;
+}
+
+int
+intrenablechecked(int irq, void (*fn)(Ureg*, void*), void *aux, int tbdf, char *name)
+{
+	NativeFixture *f=fromwake(aux);
+	if(f->failirq) return -1;
+	intrenable(irq,fn,aux,tbdf,name); return 48;
 }
 
 int
@@ -415,6 +424,31 @@ rejects(void)
 		"controller identity never wraps"); destroy(f);
 }
 
+static void
+checkedirq(void)
+{
+	VcPcOwners r;
+	VcPcOwner o;
+	NativeFixture *f;
+	int fail;
+	for(fail=0;fail<2;fail++){
+		vcpcownersinit(&r); f=fixture(0);
+		check(vcpcownerclaim(&r,&o,&f->device)==0,"IRQ fixture claim"); bindprepare(&o,f);
+#ifdef VCONSOLE_CHECKED_IRQ
+		check(vcpcownerirq(&o)==0,"explicit checked IRQ opt-in"); f->failirq=fail;
+		if(fail) check(vcpcownerstart(&o,&f->controller,&f->wake)==VcFault &&
+			f->registers==0 && f->starts==0 && (pcicfgr16(&f->device,4)&VcPcIntDisable)!=0,
+			"route failure cannot enable BME/DRIVER_OK or unmask");
+		else check(vcpcownerstart(&o,&f->controller,&f->wake)==0 && vcirqvector(&f->wake.irq)==48 &&
+			(pcicfgr16(&f->device,4)&(4|VcPcIntDisable))==4,
+			"checked route and DRIVER_OK precede INTx unmask");
+#else
+		check(vcpcownerirq(&o)==VcInvalid,"unchecked builds refuse IRQ opt-in");
+#endif
+		check(vcpcownerstop(&o)==0,"checked route teardown/reset"); destroy(f);
+	}
+}
+
 typedef struct Claim Claim;
 struct Claim { VcPcOwners *r; VcPcOwner o; Pcidev *p; int result; };
 static void*
@@ -455,7 +489,7 @@ concurrent(void)
 int
 main(void)
 {
-	lifecycle(); rejects(); concurrent();
+	lifecycle(); rejects(); concurrent(); checkedirq();
 	printf("%d native PCI owner checks passed (fake native primitives, ordered controller stubs)\n", checks);
 	return 0;
 }

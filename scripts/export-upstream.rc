@@ -1,0 +1,28 @@
+#!/bin/rc
+# SPDX-License-Identifier: MIT
+# Produce a NEW source overlay; never change /sys/src/9 or installed boot files.
+rfork e
+if(! ~ $#* 1){ echo 'usage: rc scripts/export-upstream.rc NEW-DIRECTORY' >[1=2]; exit usage }
+vc_export=$1
+if(test -e $vc_export){ echo 'overlay target exists:' $vc_export >[1=2]; exit exists }
+if(! test -r integration/vconsole.mk){ echo 'run from repository root' >[1=2]; exit source }
+for(vc_file in `{cat integration/port.modules integration/pc.modules}){
+	if(! test -r kernel/$vc_file.c) exit source
+}
+for(vc_file in `{cat integration/port.headers}){
+	if(! test -r kernel/$vc_file) exit source
+}
+mkdir -p $vc_export/sys/src/9/port $vc_export/sys/src/9/pc $vc_export/sys/src/9/pc64 $vc_export/sys/man/3 || exit directory
+for(vc_file in `{cat integration/port.modules}){
+	cp kernel/$vc_file.c $vc_export/sys/src/9/port/ || exit copy
+}
+for(vc_file in `{cat integration/pc.modules}){
+	cp kernel/$vc_file.c $vc_export/sys/src/9/pc/ || exit copy
+}
+for(vc_file in `{cat integration/port.headers}){
+	cp kernel/$vc_file $vc_export/sys/src/9/port/ || exit copy
+}
+cp integration/vconsole.mk $vc_export/sys/src/9/pc64/ || exit copy
+cp man/3/vconsole $vc_export/sys/man/3/ || exit copy
+echo 'source overlay:' $vc_export
+exit ''

@@ -45,7 +45,7 @@ struct VcController {
  * are NEVER held across allocation/MMIO/wake. All objects/outputs disjoint.
  * Controller/ops/aux remain boot-pinned; put means the caller's LAST access,
  * including sleep predicates. A reference is lifetime tracking, not authority.
- * Client refs do not permit direct stream access; a future Dev sends requests
+ * Client refs do not permit direct stream access; the Dev sends requests
  * to the one worker. All runtime methods require its exact slot-zero lease. */
 int vccinit(VcController*, VcMmio*, const VcCtlOps*, void*,
 	const VcDmaOps*, void*, Vcu64);

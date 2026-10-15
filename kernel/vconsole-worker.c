@@ -1,4 +1,12 @@
 /* SPDX-License-Identifier: MIT */
+#if !defined(QGA_HOST_TEST) && !defined(VCONSOLE_USER_TEST) && !defined(QGA_VCONSOLE_KERNEL)
+#include "u.h"
+#include "../port/lib.h"
+#include "mem.h"
+#include "dat.h"
+#include "fns.h"
+#define QGA_VCONSOLE_KERNEL
+#endif
 #include "vconsole-worker.h"
 
 static int

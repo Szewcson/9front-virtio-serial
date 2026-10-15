@@ -1,0 +1,86 @@
+.TH VCONSOLE 3
+.SH NAME
+vconsole \- native virtio-serial guest management stream
+.SH SYNOPSIS
+.nf
+.B bind '#Y0' /mnt/vconsole
+.B cat /mnt/vconsole/status
+.fi
+.SH DESCRIPTION
+The vconsole device connects a modern-capability PCI virtio-console/serial
+controller to an eve-only binary stream. It accepts exactly the nonconsole
+port named
+.BR org.qemu.guest_agent.0 .
+It is currently specific to the QEMU Guest Agent port, not a general
+arbitrary-port or terminal driver.
+.PP
+The PC64 kernel must include the driver and boot with
+.BR qgavirtio=1 .
+Exactly one supported console controller must be present, with no competing
+driver. Endpoint publication is asynchronous after the worker starts.
+With no published endpoint, attach fails rather than waiting for hardware.
+.PP
+Attach specifications are empty (slot zero), 0, 1, 2 or 3. The normal boot
+supervisor uses slot zero. Slots are endpoint identities, not arbitrary port IDs.
+Each directory contains:
+.TF status
+.TP
+.B data
+Exclusive read/write binary stream, mode 0600. Only ORDWR is accepted.
+Reads and writes may block and return short counts; offsets have no meaning.
+The driver preserves NUL and other nontext bytes and has no UART ctl file.
+.TP
+.B status
+Read-only bounded text, mode 0400. It reports numeric identity, epoch,
+owner-generation, owner/stopped/claimed/handle-held state and request phase
+counts, irq-vector and irq-deliveries. Vector -1 means no checked route;
+deliveries counts recognized ISR activity on the checked vector and saturates
+at the unsigned 64-bit maximum. It contains no payload or DMA addresses and is not a hardware
+health attestation.
+.PP
+The directory is mode 0500. Attach, walk, stat, open, read, write and block-read
+check eve identity, including operations through delegated descriptors.
+Close is allowed for native clunk cleanup. Create, remove, wstat, truncation
+and remove-on-close are denied. Native dup shares the same refcounted Chan;
+the final close retires exactly that guest owner.
+.PP
+Host socket disconnect/reconnect preserves the guest owner, receive state and
+handles; a positive write waits for host reopening. This is distinct from
+guest final close, port removal or terminal fault, which require complete
+reset and drained references before release. Blind retry after cancellation,
+short writes or timeout can duplicate side effects; these are not rollback
+guarantees.
+.PP
+INTx is deliberately masked by default. The worker polls at 100 millisecond
+deadlines. An experimental checked-API kernel build may opt in using
+.BR qgavirtioirq=1 ;
+it unmasks only after checked registration and DRIVER_OK. This path is not
+native-tested; registration and polling do not establish interrupt delivery.
+Four fresh contexts are boot-pinned and never recycled. Exhaustion or failed
+drainage can require reboot. Retry counts are not hard scheduling deadlines.
+.SH FILES
+.TF #Y0/status
+.TP
+.B #Y0/data
+Normal QGA binary stream.
+.TP
+.B #Y0/status
+CPU-side endpoint snapshot.
+.SH SOURCE
+.B /sys/src/9/port/devvconsole.c
+and
+.B /sys/src/9/port/vconsole*.[ch]
+with PC adapters in
+.B /sys/src/9/pc/vconsole*-pc.c
+and
+.BR /sys/src/9/pc/vconsole-wake.c .
+The standalone repository exports this layout; installation is explicit.
+.SH SEE ALSO
+.IR dup (2),
+.IR intro (3),
+.IR qga9 (8)
+.SH BUGS
+Experimental, modern PCI/PC64 only. Native checked interrupt validation, live
+reset/fault/unplug tests and complete kernel DMA/cache/lifetime validation
+remain pending. Filesystem permissions do not isolate eve from eve.
+The stream neither authenticates QGA nor establishes host isolation.
