@@ -82,6 +82,10 @@ class IntegrationTests(unittest.TestCase):
         self.assertNotIn("qga9kern", helper)
         self.assertIn("scripts/export-upstream.rc", helper)
         self.assertIn("test -e $vc_conf", helper)
+        # The default (polling) path still passes one empty assignment to mk.
+        # A zero-word rc list raises "null list in concatenation" instead.
+        self.assertIn("vc_irqflags=''", helper)
+        self.assertNotIn("vc_irqflags=()", helper)
         for variable in ["CONF", "VCSOURCE", "VCPORT", "VCPC"]:
             self.assertIn("'" + variable + "='^", helper)
 
@@ -100,6 +104,12 @@ class IntegrationTests(unittest.TestCase):
         mkfile = (ROOT / "mkfile").read_text()
         first_target = next(line for line in mkfile.splitlines() if ":" in line and not line.startswith("#"))
         self.assertTrue(first_target.startswith("all:V:"))
+        # Live lifetime tests consume driver contexts; normal build/test must
+        # never invoke them implicitly.
+        self.assertIn("qga9-native-vconsole-lifetime: native-vconsole-lifetime.$O", mkfile)
+        for line in mkfile.splitlines():
+            if line.startswith(("all:V:", "test:V:")) or line.startswith("\t./"):
+                self.assertNotIn("native-vconsole-lifetime", line)
 
     def test_upstream_patch_applies_and_matches_dependencies(self):
         # Exact small contexts from the inspected native pc64 configuration/rules.

@@ -78,9 +78,20 @@ Native tests run 9 portable C suites. `kernel-check` compiles 17 objects
 against actual PC64 headers; the full build additionally validates kernel link.
 These independent native checks and a complete checked-IRQ kernel link passed
 in the local release-11952 QEMU guest; see STATUS for exact scope.
+On the Proxmox guest the same nine suites/17 headers passed, and the default
+polling-kernel link passed after fixing the build helper's empty-list rc
+concatenation. An empty make assignment must be one empty rc word, not `()`;
+the host integration fixture guards that distinction. Subsequent polling and
+checked-IRQ warm boots passed with operator PVE file/exec/query tests. Actual
+vector-73 deliveries increased on the same context/owner. The selected checked
+image subsequently passed cold startup and host smoke. See STATUS for exact
+evidence and remaining limits, rather than inferring hardware safety from builds.
 The optional `mk qga9-native-vconsole-access` binary requires a live #Y0
 endpoint and explicitly tests denial to a private child changed to none; it is
 not run automatically. No default target installs, enables or reboots.
+The separate `mk qga9-native-vconsole-lifetime` fixture deliberately claims and
+retires a live endpoint. It tests native notes, pending-I/O removal, delayed
+clunk and stale metadata with a coordinator; see [RELIABILITY](RELIABILITY.md).
 
 Test shims keep the same relative `tests/` / `kernel/` topology as before
 the split. Neither production nor tests include files from the QGA repository.
@@ -89,20 +100,25 @@ must preserve fixed capacities, immutable DMA snapshots, generation checks,
 exact Chan identity and reset-before-release lifetimes. Read
 [SECURITY](SECURITY.md) before changing these contracts.
 
-## Release gates
+## Focused reliability acceptance
 
 Preserve a stock kernel and console recovery. Record real capability/layout,
 exact named port, exclusive owner, binary I/O and repeated host reconnect.
 Run the separate QGA host scripts via PVE's synchronized client; do not race a
-second socket reader. Check cold startup and real reset/error/hot-unplug behavior.
+second socket reader. Check cold startup, pending-I/O cancellation, exact
+named-port recovery, retained descriptor identity and four-context exhaustion.
+General PCI-controller hot-unplug, new driver support and extensive emulator
+fault infrastructure are outside this milestone, not implicitly proven safe.
 The revised QGA helper has a bounded readiness wait for asynchronous #Y
-publication; native ready/delayed/absent fixtures passed, while Proxmox deployment
-is still pending.
+publication; native ready/delayed/absent fixtures passed and the helper is
+deployed. See STATUS for operator host/power-cycle results and the separate
+checked-kernel rollout; a userspace pass does not establish a new kernel's safety.
 Masked INTx with polling is not IRQ evidence. The optional checked-API patch and
 activation path passed native builds and actual emulated IRQ, forced reset,
 malformed-completion and named-port recovery tests, not full platform validation.
 See [IRQ](IRQ.md) for the required distinction and remaining live checks.
 See [STATUS](STATUS.md) for executed evidence versus missing gates.
 The native manual and upstream-layout package are prepared; see
-[UPSTREAM](UPSTREAM.md). Native export/build/link passed locally. The Proxmox
-guest was not changed. Driver-neutral names remain a future migration decision.
+[UPSTREAM](UPSTREAM.md). Native export/build/link passed locally and in the
+Proxmox rollout recorded in STATUS. Driver-neutral names remain a future
+migration decision.

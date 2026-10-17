@@ -6,6 +6,12 @@ all:V: qga9-vconsole-test qga9-vconsole-mmio-test qga9-vconsole-dma-test qga9-vc
 qga9-native-vconsole-access: native-vconsole-access.$O
 	$LD -o $target $prereq
 
+qga9-native-vconsole-lifetime: native-vconsole-lifetime.$O
+	$LD -o $target $prereq
+
+native-vconsole-lifetime.$O: tests/native-vconsole-lifetime.c
+	$CC $CFLAGS -o $target tests/native-vconsole-lifetime.c
+
 install-man:V:
 	if(test -e /sys/man/3/vconsole){
 		echo 'vconsole manual already exists; preserve it before an explicit update' >[1=2]
@@ -167,4 +173,5 @@ test:V: qga9-vconsole-test qga9-vconsole-mmio-test qga9-vconsole-dma-test qga9-v
 	./qga9-vconsole-io-test
 
 clean:V:
+	rm -f native-vconsole-lifetime.$O qga9-native-vconsole-lifetime
 	rm -f native-vconsole-access.$O vconsole.$O vconsole-test.$O vconsole-kernel-check.$O vconsole-mmio.$O vconsole-mmio-test.$O vconsole-pc-check.$O vconsole-mmio-kernel-check.$O vconsole-dma.$O vconsole-dma-test.$O vconsole-dma-kernel-check.$O vconsole-irq.$O vconsole-irq-test.$O vconsole-irq-kernel-check.$O vconsole-wake-check.$O vconsole-pump.$O vconsole-pump-test.$O vconsole-pump-kernel-check.$O vconsole-stream.$O vconsole-stream-test.$O vconsole-stream-kernel-check.$O vconsole-controller.$O vconsole-controller-test.$O vconsole-io.$O vconsole-io-test.$O vconsole-io-kernel-check.$O vconsole-io-pc-check.$O vconsole-dev-check.$O vconsole-controller-kernel-check.$O vconsole-controller-pc-check.$O vconsole-worker.$O vconsole-worker-test.$O vconsole-worker-kernel-check.$O vconsole-worker-pc-check.$O vconsole-owner-pc-check.$O vconsole-boot-pc-check.$O qga9-vconsole-test qga9-vconsole-mmio-test qga9-vconsole-dma-test qga9-vconsole-irq-test qga9-vconsole-pump-test qga9-vconsole-stream-test qga9-vconsole-controller-test qga9-vconsole-worker-test qga9-vconsole-io-test qga9-native-vconsole-access

@@ -66,8 +66,11 @@ withdraws the namespace before reset/free. Ambiguous PCI/reset or drain failure
 retains claims and objects.
 
 The revised userspace helper waits for asynchronous publication with a stat-only
-bounded retry loop before one launch. Native rc fixtures passed; Proxmox deployment is pending;
-the earlier installed helper may still have the one-shot readiness race.
+bounded retry loop before one launch. Native rc fixtures passed locally and on
+the Proxmox guest; the updated helper is installed there and launched once.
+Operator host queries and a normal shutdown/start reaching automatic agent
+availability subsequently passed. See STATUS for scope and remaining checks;
+early host probes can precede guest service readiness.
 The driver also does not restart an agent after actual owner retirement.
 
 ## CVE-pattern boundaries
@@ -132,8 +135,12 @@ remains a release gate.
 
 Real native normal binary I/O, private-child `none` data/status denial,
 operator PVE file/exec results and automatic cold startup passed.
-The last verified Proxmox guest keeps INTx masked; 100 ms worker polling does not prove
-interrupt routing. Legacy native `intrenable` lacks success reporting and may
+The default build keeps INTx masked; 100 ms polling does not prove routing.
+An explicit checked-kernel warm boot on the Proxmox guest showed vector-73
+deliveries increasing on the same owner/context through passing operator host
+smoke tests. The verified image subsequently passed persistent cold boot,
+automatic startup and host smoke; this is not production or broad fault certification.
+Legacy native `intrenable` lacks success reporting and may
 panic on allocation failure. The optional checked patch reports registration
 failure, not hardware delivery or platform fault safety. An ambiguous unmask
 failure may also defeat best-effort re-masking; resources remain retained and
@@ -144,8 +151,13 @@ Local actual IRQ delivery, forced status-zero reset, one invalid used-ID fault
 and exact named-port unplug/re-add recovered into fresh contexts; binary
 file/exec tests passed after each. These specific emulated tests do not prove
 all malformed DMA/reset failure paths or physical hardware safety.
-PCI-controller unplug, native note/copy/allocator failure, competing-driver
-injection, hardware recovery, daemon restart and full cache-ordering/callback
-lifetime checks remain incomplete. Pool exhaustion/drain failures require
-recovery or reboot; no unsafe reclamation is supplied.
+Focused native notes, pending read/write removal, delayed clunk, old status views
+and four-context exhaustion subsequently passed; a clean cold boot restored the
+automatic QGA service. No new shared state or production driver path was added.
+This rules out neither arbitrary timing races nor every memory/lifetime defect.
+PCI-controller unplug, copy/allocator failure, competing-driver injection,
+failed-reset recovery and full cache-ordering/callback lifetime checks remain
+incomplete residual risks, outside the focused milestone's feature scope.
+Pool exhaustion/drain failures require recovery or reboot; no unsafe reclamation
+is supplied. See [RELIABILITY](RELIABILITY.md) for the explicit test boundary.
 See [VIRTIO](VIRTIO.md) for detailed contracts and [STATUS](STATUS.md) for evidence.

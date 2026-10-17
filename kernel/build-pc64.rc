@@ -7,7 +7,8 @@ if(! test -r kernel/vconsole-boot-pc.c){ echo 'run from project root' >[1=2]; ex
 vc_checkout=`{pwd}
 vc_conf=pc64qga
 if(~ $#* 1 2) vc_conf=$1
-vc_irqflags=()
+# Keep one empty word: concatenating an empty rc list is an error.
+vc_irqflags=''
 if(~ $#* 2){
 	if(! ~ $2 --checked-irq) exit usage
 	vc_irqflags=-DVCONSOLE_CHECKED_IRQ

@@ -51,7 +51,15 @@ kernel-header checks. The last builds a separate
 `/sys/src/9/pc64/9pc64qga`, refusing existing configuration/output names, without
 installing or rebooting. Supply a new config name if the default already exists.
 The nine native suites, all 17 kernel-header checks and a complete checked-IRQ
-kernel link passed locally. See STATUS for exact evidence and remaining gates.
+kernel link passed locally. On the Proxmox guest the nine suites, 17 header
+checks and default polling-kernel link also passed after fixing the native rc
+empty-list argument path. That kernel then passed a one-time native warm boot
+and automatic agent startup; persistent cold boot still selects the older
+known-good image during that test. A subsequent checked-IRQ warm boot passed
+real vector-73 delivery and operator PVE file/exec/query tests. The checked image
+is now selected persistently and passed full cold boot, automatic agent startup
+and operator PVE smoke tests, with verified previous images/config retained.
+See STATUS for exact evidence and remaining gates.
 Legacy `QGA_*` macros, test names, `9pc64qga` and `qgavirtio=1`
 are retained for compatibility with the deployed image/configuration.
 Neither default target writes boot files or enables hardware.
@@ -62,6 +70,10 @@ configuration/mkfile patch and checked native-constant reuse.
 See [installation and rollback](docs/INSTALL.md) before explicit enablement.
 
 ## Documentation
+
+The active milestone is focused PC64 reliability, not new hardware mechanisms;
+see [RELIABILITY](docs/RELIABILITY.md) for acceptance checks and the explicit
+disruptive native lifetime fixture.
 
 - [VIRTIO](docs/VIRTIO.md): driver contracts, limits and implementation layers.
 - [UPSTREAM](docs/UPSTREAM.md): prepared native port/pc layout and build integration.

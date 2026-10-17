@@ -1,7 +1,8 @@
 # Native kernel integration
 
-This is a prepared source overlay, not an upstream submission or a new booted
-kernel. Production sources compile directly: no generated C wrappers, absolute
+This is a prepared source overlay, not an upstream submission. Its native build,
+boot and target checks are recorded in STATUS. Production sources compile directly:
+no generated C wrappers, absolute
 PC64 include paths or dependency on the QGA daemon. The standalone `kernel/`
 tree remains the source of truth; export is an explicit build artifact.
 
@@ -40,8 +41,9 @@ may have created an empty output file. Do not overwrite stock configuration.
 Alternatively, `integration/pc64.patch` adds the same dev/misc entries and
 mkfile include to an ordinary native source checkout. Review it with
 `git apply --check` before applying it there. The patch and converter are
-regression-checked against small inspected native contexts; no upstream checkout
-was changed and no submission was made. It intentionally enables only PC64.
+regression-checked against small inspected native contexts. The tested VM builds
+use the exported overlay rather than replacing stock pc64 configuration/mkfile.
+No upstream submission was made. It intentionally enables only PC64.
 
 The fragment extends normal native rules, compiles port/pc sources with owning
 architecture headers, and tracks all private headers and native `virtio10.h`.

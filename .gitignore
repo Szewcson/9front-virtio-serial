@@ -1,6 +1,7 @@
 /build/
 /qga9-vconsole-*
 /qga9-native-vconsole-access
+/qga9-native-vconsole-lifetime
 /*.6
 /*.8
 /*.5

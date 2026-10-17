@@ -2,8 +2,11 @@
 
 The default build keeps INTx masked and polls. The checked path passed native
 builds and specific real QEMU IRQ/reset/port-removal tests in a separate local
-guest; see [STATUS](STATUS.md). The last verified Proxmox guest still used the
-polling driver. Broader live fault/platform validation remains incomplete.
+guest; see [STATUS](STATUS.md). The Proxmox guest subsequently passed checked
+patch/link, a one-time checked-kernel warm boot, real vector-73 deliveries and
+operator file/exec/query tests. Its verified checked image is now selected for
+persistent boot and passed full cold-start/automatic-agent/host smoke acceptance.
+Broader fault/platform validation remains open.
 
 ## Build and activation
 

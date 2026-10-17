@@ -8,8 +8,9 @@ It is QGA-port-specific, not a general arbitrary-port API.
 Real PCI I/O, automatic cold boot and operator PVE file/exec smoke tests passed.
 Default INTx remains masked and the worker polls at 100 ms deadlines. An opt-in
 checked-IRQ kernel passed native builds and local actual IRQ, forced reset,
-invalid used-ID and named-port recovery tests. Broader platform/fault validation
-remains open.
+invalid used-ID and named-port recovery tests. A later Proxmox checked-kernel
+warm boot also passed actual IRQ delivery and operator host smoke tests.
+Broader platform/fault validation remains open.
 See [STATUS](STATUS.md), [INSTALL](INSTALL.md) and [SECURITY](SECURITY.md).
 
 ## Native interface
@@ -161,8 +162,10 @@ reboot. Startup failures do not silently respawn.
 Startup/drain allow 100 supervisor polls at 100 ms. These are retry bounds,
 not wall-clock guarantees: native kproc resource waits may be indefinite.
 Endpoint publication is asynchronous. The revised QGA helper waits with stat-only
-probes before one launch; native fixtures passed, Proxmox deployment is pending. Earlier
-installed helpers may still have the one-shot startup race.
+probes before one launch. Native fixtures passed locally and on the Proxmox
+guest, where the updated helper was installed and launched once. Operator host
+queries and a normal shutdown/start reaching automatic agent availability then
+passed; see STATUS for their scope and remaining target-specific checks.
 
 Stop closes admission/IRQ, masks INTx and clears BME, then waits for actual
 worker/client/operation/wake drainage. Namespace withdrawal precedes observed
